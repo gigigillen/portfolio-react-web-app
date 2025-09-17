@@ -1,0 +1,58 @@
+.background-color {
+  background-color: black;
+  transition: background-color 0.3s ease;
+  min-height: 100vh;
+}
+
+/* Three column layout */
+.columns {
+  display: flex;
+  justify-content: center;
+  grid-template-columns: repeat(3, 1fr);
+}
+
+.column {
+  padding-top: 100px;
+  padding-bottom: 100px;
+  padding-left: 50px;
+  display: flex;
+  flex-direction: column;
+}
+
+.column img {
+  display: block;
+  margin-bottom: 40px;
+}
+
+/* Shift entire column up, but not so much that it goes out of view */
+.column-reverse {
+  transform: translateY(calc(-100% + 100vh));
+}
+
+/* As we're about to shift content out of .columns, we need it to hide its overflow */
+.columns {
+  overflow-y: hidden;
+}
+
+/* Flip item order in reversed columns */
+/* .column-reverse {
+	flex-direction: column-reverse;
+} */
+
+@keyframes adjust-position {
+  /* Start position: shift entire column up, but not so that it goes out of view */
+  from {
+    transform: translateY(calc(-100% + 100vh));
+  }
+
+  /* End position: shift entire column down, but not so that it goes out of view */
+  to {
+    transform: translateY(calc(100% - 100vh));
+  }
+}
+
+/* Hook our animation with the timeline to our columns */
+.column-reverse {
+  animation: adjust-position linear forwards;
+  animation-timeline: scroll(root block);
+}

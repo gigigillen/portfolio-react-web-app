@@ -1,0 +1,82 @@
+
+.graphic-title {
+  position: absolute; /* needed for top/left positioning */
+  top: 10px; /* distance from top of screen */
+  left: 50%; /* horizontally in the middle */
+  transform: translateX(-50%); /* shift back half width to truly center */
+  font-size: 100px; /* final size */
+}
+
+.content-wrapper {
+  opacity: 0;
+  transform: translateY(10px); /* optional: small slide-up */
+  transition: opacity 0.8s ease-in-out, transform 0.8s ease-in-out;
+}
+
+.content-wrapper.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.content-wrapper.hidden {
+  opacity: 0;
+}
+
+.coded-img {
+  width: 400px !important;
+  margin-bottom: 100px;
+}
+
+.brochure-gallery {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  background-color: rgb(40, 40, 40);
+  align-items: center;     /* centers images vertically in each row */
+
+}
+
+.brochure-img {
+  max-width: 400px;
+  height: 400px;
+  margin: 50px;
+}
+
+
+
+@keyframes move {
+	to {
+		/* Move horizontally so that right edge is aligned against the viewport */
+		transform: translateX(calc(-100% + 100vw));
+	}
+}
+
+
+
+#sectionPin {
+	height: 500vh; 	/* Stretch it out, so that we create room for the horizontal scroll animation */
+	overflow: visible; /* To make position sticky work … */
+	view-timeline-name: --section-pin-tl; /* create a scroll timeline */
+	view-timeline-axis: block; /* tie it to vertical scrolling */
+}
+
+	/* Stick to Top */
+.pin-wrap-sticky {
+	height: 100vh;
+	width: 100vw;
+	position: sticky;
+	top: 0;
+
+	width: 100vw;
+	overflow-x: hidden;
+}
+
+.pin-wrap {
+  height: 100vh;
+  display: flex; /* row layout */
+  width: max-content; /* expands to fit images */
+  will-change: transform;
+  animation: move linear forwards;
+  animation-timeline: --section-pin-tl;
+  animation-range: contain 0% contain 100%;
+}
