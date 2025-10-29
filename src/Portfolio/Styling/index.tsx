@@ -51,7 +51,7 @@ export default function Styling() {
   );
 
   return (
-    <div className="content background-color">
+    <div className="background-color">
       <div className="columns">
         {chunkedStyling.map((column, colIndex) => (
           <div
