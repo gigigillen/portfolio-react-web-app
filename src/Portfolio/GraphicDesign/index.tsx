@@ -1,6 +1,10 @@
 // GraphicDesign.tsx
-import { useLayoutEffect, useRef, useState } from "react";
+import { useLayoutEffect, useRef, useState, useEffect } from "react";
+import { gsap } from "gsap";
+import { ScrollTrigger } from "gsap/ScrollTrigger";
 import "./styles.css";
+
+gsap.registerPlugin(ScrollTrigger);
 
 const brochure = [
   "images/brochure.png",
@@ -20,13 +24,16 @@ const brochure = [
 
 export default function GraphicDesign() {
   const [animating, setAnimating] = useState(true);
+  const [imagesLoaded, setImagesLoaded] = useState(false);
   const elRef = useRef<HTMLSpanElement | null>(null);
+  const galleryRef = useRef<HTMLDivElement | null>(null);
+  const loadedCountRef = useRef(0);
 
   useLayoutEffect(() => {
     const data = sessionStorage.getItem("transitionData");
     if (!data) {
       setAnimating(false);
-      console.log("ERROR: no data found"); //TODO: throw actual errors
+      console.log("ERROR: no data found");
       return;
     }
 
@@ -39,41 +46,33 @@ export default function GraphicDesign() {
       return;
     }
 
-    // BEGINING OF ANIMATION
-    // el.style.position = "fixed";
-    el.style.left = `${x}px`; //old position
-    el.style.top = `${y}px`; //old position
+    el.style.left = `${x}px`;
+    el.style.top = `${y}px`;
     el.style.width = `${width}px`;
     el.style.height = `${height}px`;
     el.style.transition = "all 600ms ease";
-    // set initial visual size that matches the ORIGIN
     el.style.fontSize = "1rem";
     el.style.transform = "none";
 
-    // Give the browser a frame, then move to final position
     requestAnimationFrame(() => {
-      // final position — match your .graphic-title final CSS (here: top:20px left:20px)
       el.style.display = "flex";
-      el.style.left = "50%"; // anchors left position to center of screen
-      el.style.top = "10px"; // near the top
-      el.style.width = "100%"; //same size as final
-      el.style.height = "100%"; //same size as final
+      el.style.left = "50%";
+      el.style.top = "10px";
+      el.style.width = "100%";
+      el.style.height = "100%";
       el.style.justifyContent = "center";
-      el.style.transform = "translateX(-50%)"; // shift left by 50% of its width, so it's centered
+      el.style.transform = "translateX(-50%)";
       el.style.fontSize = "100px";
     });
 
-    // After transition ends, clear animating flag
     const finish = () => {
       setAnimating(false);
-      // optional: cleanup stored transitionData
       sessionStorage.removeItem("transitionData");
     };
 
     const handleTransitionEnd = () => finish();
     el.addEventListener("transitionend", handleTransitionEnd, { once: true });
 
-    // fallback in case transitionend doesn't fire
     const fallback = setTimeout(finish, 700);
 
     return () => {
@@ -81,6 +80,51 @@ export default function GraphicDesign() {
       clearTimeout(fallback);
     };
   }, []);
+
+  const handleImageLoad = () => {
+    loadedCountRef.current += 1;
+    if (loadedCountRef.current === brochure.length) {
+      setImagesLoaded(true);
+    }
+  };
+
+  // Horizontal scroll animation with GSAP
+  useEffect(() => {
+    if (animating || !galleryRef.current || !imagesLoaded) return;
+
+    // Small delay to ensure Safari has calculated dimensions
+    const timer = setTimeout(() => {
+      const gallery = galleryRef.current;
+      if (!gallery) return;
+
+      const scrollDistance = gallery.scrollWidth - window.innerWidth;
+
+      console.log("Gallery width:", gallery.scrollWidth);
+      console.log("Window width:", window.innerWidth);
+      console.log("Scroll distance:", scrollDistance);
+
+      const scrollTrigger = gsap.to(gallery, {
+        x: -scrollDistance,
+        ease: "none",
+        scrollTrigger: {
+          trigger: "#sectionPin",
+          start: "top top",
+          end: "bottom bottom",
+          scrub: 1,
+          pin: ".pin-wrap-sticky",
+          anticipatePin: 1,
+          invalidateOnRefresh: true,
+        },
+      });
+
+      return () => {
+        scrollTrigger.scrollTrigger?.kill();
+        scrollTrigger.kill();
+      };
+    }, 100);
+
+    return () => clearTimeout(timer);
+  }, [animating, imagesLoaded]);
 
   return (
     <div>
@@ -98,17 +142,18 @@ export default function GraphicDesign() {
         </div>
       </div>
 
-      {/* BORCHURE */}
+      {/* BROCHURE */}
       <div id="sectionPin">
         <div className="pin-wrap-sticky">
           <div className="pin-wrap">
-            <div className="brochure-gallery">
+            <div ref={galleryRef} className="brochure-gallery">
               {brochure.map((src, index) => (
                 <img
                   key={index}
                   src={src}
                   alt={`Brochure ${index + 1}`}
                   className="brochure-img"
+                  onLoad={handleImageLoad}
                 />
               ))}
             </div>
@@ -117,8 +162,8 @@ export default function GraphicDesign() {
       </div>
 
       <div className="row justify-content-center">
-          <img src="images/coded.png" alt="Coded" className="coded-img" />
-        </div>
+        <img src="images/coded.png" alt="Coded" className="coded-img" />
+      </div>
     </div>
   );
 }
