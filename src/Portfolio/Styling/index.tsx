@@ -1,5 +1,9 @@
-import { useEffect } from "react";
+import { useEffect, useRef, useState } from "react";
+import { gsap } from "gsap";
+import { ScrollTrigger } from "gsap/ScrollTrigger";
 import "./styles.css";
+
+gsap.registerPlugin(ScrollTrigger);
 
 export default function Styling() {
   const styling = [
@@ -32,23 +36,98 @@ export default function Styling() {
     "images/styling/styling28.png",
   ];
 
+  const [imagesLoaded, setImagesLoaded] = useState(false);
+  const loadedCountRef = useRef(0);
+  const columnsRef = useRef<(HTMLDivElement | null)[]>([]);
+
   useEffect(() => {
-    // Set body background color on mount
     document.body.style.backgroundColor = "#000000";
-    // Optional: set html too, for extra safety
     document.documentElement.style.backgroundColor = "#000000";
 
-    // Clean up on unmount
     return () => {
       document.body.style.backgroundColor = "";
       document.documentElement.style.backgroundColor = "";
     };
   }, []);
 
+  useEffect(() => {
+    if (!imagesLoaded) return;
+  
+    const scrollTriggers: gsap.core.Tween[] = [];
+  
+    const setupAnimations = () => {
+      // Kill existing animations
+      scrollTriggers.forEach((tween) => {
+        tween.scrollTrigger?.kill();
+        tween.kill();
+      });
+      scrollTriggers.length = 0;
+  
+      columnsRef.current.forEach((column, index) => {
+        if (!column) return;
+  
+        // Columns 0 and 2 (outer) - animate them slowly downward
+        if (index % 2 === 0) {
+          const columnHeight = column.offsetHeight;
+          const viewportHeight = window.innerHeight;
+          const startY = -(columnHeight - viewportHeight);
+          const endY = columnHeight - viewportHeight;
+  
+          const tween = gsap.fromTo(
+            column,
+            {
+              y: startY,
+            },
+            {
+              y: endY,
+              ease: "none",
+              scrollTrigger: {
+                trigger: ".background-color",
+                start: "top top",
+                end: "bottom bottom",
+                scrub: true, // Changed to true for immediate response
+                invalidateOnRefresh: true,
+              },
+            }
+          );
+          scrollTriggers.push(tween);
+        }
+      });
+    };
+  
+    setupAnimations();
+  
+    // Recalculate on window resize
+    const handleResize = () => {
+      setupAnimations();
+    };
+  
+    window.addEventListener('resize', handleResize);
+  
+    return () => {
+      window.removeEventListener('resize', handleResize);
+      scrollTriggers.forEach((tween) => {
+        tween.scrollTrigger?.kill();
+        tween.kill();
+      });
+    };
+  }, [imagesLoaded]);
+
+  const handleImageLoad = () => {
+    loadedCountRef.current += 1;
+    if (loadedCountRef.current === styling.length) {
+      setTimeout(() => {
+        setImagesLoaded(true);
+      }, 100);
+    }
+  };
+
   const columnCount = 3;
-  const chunkedStyling = Array.from({ length: columnCount }, (_, i) =>
-    styling.slice(i * Math.ceil(styling.length / columnCount), (i + 1) * Math.ceil(styling.length / columnCount))
-  );
+  const chunkedStyling: string[][] = [[], [], []];
+
+  styling.forEach((item, index) => {
+    chunkedStyling[index % columnCount].push(item);
+  });
 
   return (
     <div className="background-color">
@@ -57,6 +136,9 @@ export default function Styling() {
           <div
             className={`column ${colIndex % 2 === 0 ? "column-reverse" : ""}`}
             key={colIndex}
+            ref={(el) => {
+              columnsRef.current[colIndex] = el;
+            }}
           >
             {column.map((src, index) => (
               <img
@@ -65,6 +147,7 @@ export default function Styling() {
                 alt={`${src}`}
                 width="350px"
                 height="350px"
+                onLoad={handleImageLoad}
               />
             ))}
           </div>
